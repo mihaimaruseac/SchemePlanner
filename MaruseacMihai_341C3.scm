@@ -7,14 +7,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; GLOBAL AUXILIARY FUNCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; first, convert to Haskel-ish notations
 (require srfi/1)
 (define (oldtake l n) (take l n))
 (define (olddrop l n) (drop l n))
+
+; some auxiliary functions, used below
 (define (nub-aux l seen) (if (null? l) seen (if (elem? (car l) seen) (nub-aux (cdr l) seen) (nub-aux (cdr l) (cons (car l) seen)))))
 (define (andList l) (foldl (lambda (x y) (and x y)) #t l))
 (define (orList l) (foldl (lambda (x y) (and x y)) #f l))
 (define (stringCompare s1 s2) (string<? s1 s2))
-
 (define (take n l) (oldtake l n))
 (define (drop n l) (olddrop l n))
 (define (head l) (if (null? l) '() (car l)))
