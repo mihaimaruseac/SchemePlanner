@@ -41,6 +41,9 @@
 ; Set removal
 (define (-- l1 l2) (filter (lambda (x) (not (elem? x l2))) l1))
 
+; Interesction
+(define (^ l1 l2) (filter (lambda (x) (elem? x l2)) l1))
+
 ; Cartesian products and multiple-list applications
 (define (cAp2 f x l2) (map f (repeat x (length l2)) l2))
 (define (cAp f l1 l2) (if (null? l1) '() (append (cAp2 f (car l1) l2) (cAp f (cdr l1) l2))))
@@ -91,6 +94,7 @@
 (define (opFindNameArg name vars opList) (head (filter (lambda (x) (and (equal? (opName x) name) (equal? (opVars x) vars))) opList)))
 (define (opFindResult pred opList) (if (null? opList) '() (+++ (getAllInstantiations pred (car opList)) (opFindResult pred (cdr opList)))))
 (define (opFullInstance ops goal world) (opFullWorld world (opFullGoal goal ops)))
+(define (opExists? pred opList) (if (null? (opFindResult pred opList)) #f #t))
 
 ; applications
 (define (opApply op state) (predList+ (predList- state (opDel op)) (opAdd op)))
@@ -130,17 +134,6 @@
        )
     obtainedOps
     )
-  )
-
-(define A
-  '(
-    (((move d1 p1 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1))))
-    (((move d1 d1 d2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1))))
-    (((move d1 p3 d2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3))))
-    )
-  )
-(define B
-  '(((move d1 B d2) ((disc d1) (clear d1) (on d1 B) (smaller d1 d2) (clear d2)) ((on d1 B) (clear d2)) ((on d1 d2) (clear B))))
   )
 
 (define (opFullGoal goal l) (apply +++ (map (lambda (x) (opFullInstancesGoal x goal)) l)))
@@ -298,12 +291,32 @@
 (define (orDes n) (car n))
 
 ; expanding: create OPR nodes with empty desirability slot
-(define (orExpand n opList goal worldObjects)
+(define (orExpand n opList goal init worldObjects)
   (let*
       (
        (ops (opFullInstance (opFindResult (orPred n) opList) goal worldObjects))
+       (l (length ops))
        )
-    (map (lambda (x) (cons desEmpty (list x))) ops)
+    (map (lambda (o) (makeOPR o goal init opList l)) ops)
+    )
+  )
+
+(define (makeOPR op goal init opList l)
+  (let*
+      (
+       (killSet (^ (opDel op) goal))
+       (kv (length killSet))
+       (genSet (^ (opAdd op) goal))
+       (gv (length genSet))
+       (needSet (opPred op))
+       (inGoal (^ needSet goal))
+       (czv (length inGoal))
+       (given (^ needSet init))
+       (ifcv (length given))
+       (notGiven (-- needSet init))
+       (unobtainable? (not (andList (map (lambda (x) (opExists? x opList)) notGiven))))
+       )
+    (if unobtainable? '() (cons (list l kv gv czv ifcv) (list op)))
     )
   )
 
@@ -327,20 +340,6 @@
   opr
   )
 
-(define A
-  '(
-    ((?) ((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d1)) ((on d1 d2) (clear p1))))
-    ((?) ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d2)) ((on d1 d2) (clear p1))))
-    ((?) ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p1)) ((on d1 d2) (clear p1))))
-    ((?) ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p2)) ((on d1 d2) (clear p1))))
-    ((?) ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p3)) ((on d1 d2) (clear p1))))
-    ((?) ((move d2 p1 p2 d1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d1)) ((on d2 p2) (clear p1))))
-    ((?) ((move d2 p1 p2 d2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d2)) ((on d2 p2) (clear p1))))
-    ((?) ((move d2 p1 p2 p1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p1)) ((on d2 p2) (clear p1))))
-    ((?) ((move d2 p1 p2 p2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p2)) ((on d2 p2) (clear p1))))
-    ((?) ((move d2 p1 p2 p3) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p3)) ((on d2 p2) (clear p1))))
-    )
-  )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  DESIRABILITY AUXILIARY FUNCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -351,6 +350,17 @@
 (define (desGen d) (caddr d))
 (define (desCz d) (cadddr d))
 (define (desIFc d) (caddddr d))
+
+; setters
+(define (desSetOp d v) (++ (take 0 d) (list v) (drop 1 d)))
+(define (desSetKill d v) (++ (take 1 d) (list v) (drop 2 d)))
+(define (desSetGen d v) (++ (take 2 d) (list v) (drop 3 d)))
+(define (desSetCz d v) (++ (take 3 d) (list v) (drop 4 d)))
+(define (desSetIFc d v) (++ (take 4 d) (list v) (drop 5 d)))
+(define (desSetORLevel d opv) (desSetOp d opv))
+(define (desSetOPRLevel d killv genv) (desSetKill (desSetGen d genv) killv))
+(define (desSetANDLevel d czv ifcv) (desSetCz (desSetIFc d ifcv) czv))
+(define (desSetOPRANDLevel d killv genv czv ifcv) (desSetANDLevel (desSetOPRLevel d killv genv) czv ifcv))
 
 ; construct empty slot
 (define desEmpty (list UN UN UN UN UN))
