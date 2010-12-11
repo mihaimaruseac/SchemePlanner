@@ -72,6 +72,9 @@
 (define OO 'OO)
 (define UN '?)
 
+; more cadddr goodies
+(define (caddddr l) (car (cddddr l)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  OPERATOR AUXILIARY FUNCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -129,10 +132,21 @@
     )
   )
 
+(define A
+  '(
+    (((move d1 p1 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1))))
+    (((move d1 d1 d2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1))))
+    (((move d1 p3 d2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3))))
+    )
+  )
+(define B
+  '(((move d1 B d2) ((disc d1) (clear d1) (on d1 B) (smaller d1 d2) (clear d2)) ((on d1 B) (clear d2)) ((on d1 d2) (clear B))))
+  )
+
 (define (opFullGoal goal l) (apply +++ (map (lambda (x) (opFullInstancesGoal x goal)) l)))
 
 (define (opFullInstancesGoal op goal)
-  (if (opInstantiated? op) (list op)
+  (if (opInstantiated? op) op
       (let
           (
            (firstUnInstPred (head (filter (lambda (p) (not (predInstantiated? p))) (opAdd op))))
@@ -315,27 +329,31 @@
 
 (define A
   '(
- ((?) ((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d1)) ((on d1 d2) (clear p1))))
- ((?) ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d2)) ((on d1 d2) (clear p1))))
- ((?) ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p1)) ((on d1 d2) (clear p1))))
- ((?) ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p2)) ((on d1 d2) (clear p1))))
- ((?) ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p3)) ((on d1 d2) (clear p1))))
- ((?) ((move d2 p1 p2 d1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d1)) ((on d2 p2) (clear p1))))
- ((?) ((move d2 p1 p2 d2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d2)) ((on d2 p2) (clear p1))))
- ((?) ((move d2 p1 p2 p1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p1)) ((on d2 p2) (clear p1))))
- ((?) ((move d2 p1 p2 p2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p2)) ((on d2 p2) (clear p1))))
- ((?) ((move d2 p1 p2 p3) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p3)) ((on d2 p2) (clear p1))))
- )
-)
+    ((?) ((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d1)) ((on d1 d2) (clear p1))))
+    ((?) ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d2)) ((on d1 d2) (clear p1))))
+    ((?) ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p1)) ((on d1 d2) (clear p1))))
+    ((?) ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p2)) ((on d1 d2) (clear p1))))
+    ((?) ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p3)) ((on d1 d2) (clear p1))))
+    ((?) ((move d2 p1 p2 d1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d1)) ((on d2 p2) (clear p1))))
+    ((?) ((move d2 p1 p2 d2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d2)) ((on d2 p2) (clear p1))))
+    ((?) ((move d2 p1 p2 p1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p1)) ((on d2 p2) (clear p1))))
+    ((?) ((move d2 p1 p2 p2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p2)) ((on d2 p2) (clear p1))))
+    ((?) ((move d2 p1 p2 p3) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p3)) ((on d2 p2) (clear p1))))
+    )
+  )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  DESIRABILITY AUXILIARY FUNCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; record accessors
 (define (desOp d) (car d))
+(define (desKill d) (cadr d))
+(define (desGen d) (caddr d))
+(define (desCz d) (cadddr d))
+(define (desIFc d) (caddddr d))
 
 ; construct empty slot
-(define desEmpty (list UN))
+(define desEmpty (list UN UN UN UN UN))
 
 ; get heuristic value
 (define (desEval d) OO)
@@ -343,6 +361,10 @@
 ; printing
 (define (desPrint d)
   (display "op = ")(display (desOp d))(display "; ")
+  (display "kill = ")(display (desKill d))(display "; ")
+  (display "gen = ")(display (desGen d))(display "; ")
+  (display "cz = ")(display (desCz d))(display "; ")
+  (display "IFc = ")(display (desIFc d))(display "; ")
   d
   )
 
@@ -365,9 +387,9 @@
 
 ; testing Hanoi problem
 (define HanoiOps '((
-                    (move A B C D)
+                    (move A B C)
                     ((disc A) (clear A) (on A B) (smaller A C) (clear C))
-                    ((on A B) (clear C) (test D))
+                    ((on A B) (clear C))
                     ((on A C) (clear B))
                     )))
 (define HanoiState '((disc d1) (disc d2)
@@ -376,23 +398,36 @@
                                (on d1 d2) (on d2 p1)))
 (define HanoiGoal '((clear p1) (clear d1) (on d1 d2) (on d2 p2) (clear p3)))
 
-; test for second day of work
-(display "Test op instantiation ")
+; tests for second day of work
+(display "Test op instantiation1 ")
+(define HanoiOps1  '((
+                      (move A B C D)
+                      ((disc A) (clear A) (on A B) (smaller A C) (clear C))
+                      ((on A B) (clear C))
+                      ((on A C) (clear B))
+                      )))
+(if (== (opFullInstance (opFindResult '(on d1 d2) HanoiOps1) HanoiGoal (worldObjects HanoiState HanoiGoal))
+        '(((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1)))
+          ((move d1 d1 d2 d1) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 d2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 p1) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 p2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 p3) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1)))
+          ((move d1 p3 d2 d1) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 d2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 p1) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 p2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 p3) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3)))))
+    (display "passed") (display "failed"))
+(newline)
+(display "Test op instantiation2 ")
 (if (== (opFullInstance (opFindResult '(on d1 d2) HanoiOps) HanoiGoal (worldObjects HanoiState HanoiGoal))
-        '(((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d1)) ((on d1 d2) (clear p1)))
-          ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d2)) ((on d1 d2) (clear p1)))
-          ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p1)) ((on d1 d2) (clear p1)))
-          ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p2)) ((on d1 d2) (clear p1)))
-          ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p3)) ((on d1 d2) (clear p1)))
-          ((move d1 d1 d2 d1) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test d1)) ((on d1 d2) (clear d1)))
-          ((move d1 d1 d2 d2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test d2)) ((on d1 d2) (clear d1)))
-          ((move d1 d1 d2 p1) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test p1)) ((on d1 d2) (clear d1)))
-          ((move d1 d1 d2 p2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test p2)) ((on d1 d2) (clear d1)))
-          ((move d1 d1 d2 p3) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test p3)) ((on d1 d2) (clear d1)))
-          ((move d1 p3 d2 d1) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test d1)) ((on d1 d2) (clear p3)))
-          ((move d1 p3 d2 d2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test d2)) ((on d1 d2) (clear p3)))
-          ((move d1 p3 d2 p1) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test p1)) ((on d1 d2) (clear p3)))
-          ((move d1 p3 d2 p2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test p2)) ((on d1 d2) (clear p3)))
-          ((move d1 p3 d2 p3) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test p3)) ((on d1 d2) (clear p3)))))
+        '(((move d1 p1 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2)) ((on d1 d2) (clear p1)))
+          ((move d1 d1 d2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2)) ((on d1 d2) (clear d1)))
+          ((move d1 p3 d2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2)) ((on d1 d2) (clear p3)))))
     (display "passed") (display "failed"))
 (newline)
