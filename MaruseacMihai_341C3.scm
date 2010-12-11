@@ -85,10 +85,8 @@
 ; locators
 (define (opFindName name opList) (head (filter (lambda (x) (equal? (opName x) name)) opList)))
 (define (opFindNameArg name vars opList) (head (filter (lambda (x) (and (equal? (opName x) name) (equal? (opVars x) vars))) opList)))
-(define (opFindResult pred opList)
-  (if (null? opList) '()
-      (+++ (getAllInstantiations pred (car opList)) (opFindResult pred (cdr opList))))
-  )
+(define (opFindResult pred opList) (if (null? opList) '() (+++ (getAllInstantiations pred (car opList)) (opFindResult pred (cdr opList)))))
+(define (opFullInstance ops goal world) (opFullWorld world (opFullGoal goal ops)))
 
 ; applications
 (define (opApply op state) (predList+ (predList- state (opDel op)) (opAdd op)))
@@ -127,6 +125,7 @@
     obtainedOps
     )
   )
+(define (opFullGoal goal l) (apply +++ (map (lambda (x) (opFullInstancesGoal x goal)) l)))
 (define (opFullInstancesGoal op goal)
   (if (opInstantiated? op) (list op)
       (let
@@ -145,26 +144,20 @@
               )))
       )
   )
-; the following function shouldn't be called in a normal description
-(define (opFullInstancesWorld op world)
+(define (opFullWorld world l) (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l)))
+; the following function should return quickly in a normal implementation
+(define (opFullInstancesWorld op world) 
   (if (opInstantiated? op) (list op)
       (let*
           (
-           (args (opVars op))
-           (bindings (getAllBindings args world))
-           (results (map (lambda (b) (opInstance op b)) bindings))
+           (bindings (getAllBindings (opVars op) world))
            )
-        results
+        (map (lambda (b) (opInstance op b)) bindings)
         )
       )
   )
-(define (getAllBindings args world)
-  (let
-      (
-       (lists (map (lambda (v) (if (variable? v) (map (lambda (x) (cons v x)) world) (list (cons v v)))) args))
-       )
-    (** lists))
-  )
+(define (getAllBindings args world) (let ((lists (map (lambda (v) (if (variable? v) (map (lambda (x) (cons v x)) world) (list (cons v v)))) args)))
+                                      (** lists)))
 
 (define test
   (lambda ()
@@ -367,3 +360,24 @@
                                (clear d1) (clear p2) (clear p3)
                                (on d1 d2) (on d2 p1)))
 (define HanoiGoal '((clear p1) (clear d1) (on d1 d2) (on d2 p2) (clear p3)))
+
+; test for second day of work
+(display "Test op instantiation ")
+(if (== (opFullInstance (opFindResult '(on d1 d2) HanoiOps) HanoiGoal (worldObjects HanoiState HanoiGoal))
+        '(((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d1)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d2)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p1)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p2)) ((on d1 d2) (clear p1)))
+          ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p3)) ((on d1 d2) (clear p1)))
+          ((move d1 d1 d2 d1) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test d1)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 d2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test d2)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 p1) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test p1)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 p2) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test p2)) ((on d1 d2) (clear d1)))
+          ((move d1 d1 d2 p3) ((disc d1) (clear d1) (on d1 d1) (smaller d1 d2) (clear d2)) ((on d1 d1) (clear d2) (test p3)) ((on d1 d2) (clear d1)))
+          ((move d1 p3 d2 d1) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test d1)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 d2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test d2)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 p1) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test p1)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 p2) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test p2)) ((on d1 d2) (clear p3)))
+          ((move d1 p3 d2 p3) ((disc d1) (clear d1) (on d1 p3) (smaller d1 d2) (clear d2)) ((on d1 p3) (clear d2) (test p3)) ((on d1 d2) (clear p3)))))
+    (display "passed") (display "failed"))
+(newline)
