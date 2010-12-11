@@ -58,6 +58,7 @@
 ; substitution rule and unifications
 (define (substTerm x bindName bindValue) (if (equal? x bindName) bindValue x))
 (define (unify vals vars) (if (= (length vals) (length vars)) (unify-aux vals vars) '()))
+
 (define (unify-aux vals vars)
   (if (null? vals) '()
       (if (variable? (car vars)) (cons (cons (car vars) (car vals)) (unify-aux (cdr vals) (cdr vars)))
@@ -95,6 +96,7 @@
 ; instantiations and bindings
 (define (opInstantiated? op) (not (orList (map variable? (opVars op)))))
 (define (opInstance op bindings) (foldl opBindVarVal op bindings))
+
 (define (opBindVarVal bind op)
   (let*
       (
@@ -113,6 +115,7 @@
     (list (cons oldName newVars) newPred newDel newAdd)
     )
   )
+
 (define (getAllInstantiations pred op)
   (let*
       (
@@ -125,7 +128,9 @@
     obtainedOps
     )
   )
+
 (define (opFullGoal goal l) (apply +++ (map (lambda (x) (opFullInstancesGoal x goal)) l)))
+
 (define (opFullInstancesGoal op goal)
   (if (opInstantiated? op) (list op)
       (let
@@ -144,31 +149,12 @@
               )))
       )
   )
-(define (opFullWorld world l) (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l)))
-; the following function should return quickly in a normal implementation
-(define (opFullInstancesWorld op world) 
-  (if (opInstantiated? op) (list op)
-      (let*
-          (
-           (bindings (getAllBindings (opVars op) world))
-           )
-        (map (lambda (b) (opInstance op b)) bindings)
-        )
-      )
-  )
-(define (getAllBindings args world) (let ((lists (map (lambda (v) (if (variable? v) (map (lambda (x) (cons v x)) world) (list (cons v v)))) args)))
-                                      (** lists)))
 
-(define test
-  (lambda ()
-    (let*
-        (
-         (O (opFindResult '(on d1 d2) HanoiOps))
-         (O (car (opFullInstancesGoal (car O) HanoiGoal)))
-         (w (worldObjects HanoiState HanoiGoal))
-         )
-      (opFullInstancesWorld O w)
-      )))
+(define (opFullWorld world l) (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l)))
+
+; the following function should return quickly in a normal implementation
+(define (opFullInstancesWorld op world) (if (opInstantiated? op) (list op) (map (lambda (b) (opInstance op b)) (getAllBindings (opVars op) world))))
+(define (getAllBindings args world) (let ((lists (map (lambda (v) (if (variable? v) (map (lambda (x) (cons v x)) world) (list (cons v v)))) args))) (** lists)))
 
 ; printing
 (define (opPrint op)
@@ -298,7 +284,14 @@
 (define (orDes n) (car n))
 
 ; expanding: create OPR nodes with empty desirability slot
-(define (orExpand n opList) n)
+(define (orExpand n opList goal worldObjects)
+  (let*
+      (
+       (ops (opFullInstance (opFindResult (orPred n) opList) goal worldObjects))
+       )
+    (map (lambda (x) (cons desEmpty (list x))) ops)
+    )
+  )
 
 ; printing
 (define (orPrint n)
@@ -311,7 +304,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; record accessors
+(define (oprOp opr) (cadr opr))
+(define (oprDes opr) (car opr))
 
+; printing
+(define (oprPrint opr)
+  (display "OPR node: ")(desPrint (oprDes opr))(newline)(opPrint (oprOp opr))(newline)
+  opr
+  )
+
+(define A
+  '(
+ ((?) ((move d1 p1 d2 d1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d1)) ((on d1 d2) (clear p1))))
+ ((?) ((move d1 p1 d2 d2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test d2)) ((on d1 d2) (clear p1))))
+ ((?) ((move d1 p1 d2 p1) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p1)) ((on d1 d2) (clear p1))))
+ ((?) ((move d1 p1 d2 p2) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p2)) ((on d1 d2) (clear p1))))
+ ((?) ((move d1 p1 d2 p3) ((disc d1) (clear d1) (on d1 p1) (smaller d1 d2) (clear d2)) ((on d1 p1) (clear d2) (test p3)) ((on d1 d2) (clear p1))))
+ ((?) ((move d2 p1 p2 d1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d1)) ((on d2 p2) (clear p1))))
+ ((?) ((move d2 p1 p2 d2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test d2)) ((on d2 p2) (clear p1))))
+ ((?) ((move d2 p1 p2 p1) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p1)) ((on d2 p2) (clear p1))))
+ ((?) ((move d2 p1 p2 p2) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p2)) ((on d2 p2) (clear p1))))
+ ((?) ((move d2 p1 p2 p3) ((disc d2) (clear d2) (on d2 p1) (smaller d2 p2) (clear p2)) ((on d2 p1) (clear p2) (test p3)) ((on d2 p2) (clear p1))))
+ )
+)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  DESIRABILITY AUXILIARY FUNCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
