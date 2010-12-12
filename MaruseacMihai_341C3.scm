@@ -100,6 +100,16 @@
 (define (opFullInstance ops goal world) (opFullWorld world (opFullGoal goal ops)))
 (define (opExists? pred opList) (if (null? (opFindResult pred opList)) #f #t))
 
+(define (opObtainable? op init opList)
+  (let*
+      (
+       (needSet (opPred op))
+       (notGiven (-- needSet init))
+       )
+    (andList (map (lambda (x) (opExists? x opList)) notGiven))
+    )
+  )
+
 ; applications
 (define (opApply op state) (predList+ (predList- state (opDel op)) (opAdd op)))
 (define (opApplicable? op state) (and (opInstantiated? op) (in? (opPred op) state)))
@@ -313,9 +323,10 @@
   (let*
       (
        (ops (opFullInstance (opFindResult (orPred n) opList) goal worldObjects))
-       (l (length ops))
+       (goodOps (filter (lambda (x) (opObtainable? x init opList)) ops))
+       (l (length goodOps))
        )
-    (filter notnull? (map (lambda (o) (makeOPR o goal init opList l)) ops))
+    (map (lambda (o) (makeOPR o goal init opList l)) goodOps)
     )
   )
 
@@ -331,10 +342,8 @@
        (czv (length inGoal))
        (given (^ needSet init))
        (ifcv (length given))
-       (notGiven (-- needSet init))
-       (unobtainable? (not (andList (map (lambda (x) (opExists? x opList)) notGiven))))
        )
-    (if unobtainable? '() (cons (list l kv gv czv ifcv) (list op)))
+    (cons (list l kv gv czv ifcv) (list op))
     )
   )
 
