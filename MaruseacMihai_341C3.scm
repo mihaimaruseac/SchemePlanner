@@ -55,6 +55,9 @@
 (define (in? l1 l2) (andList (map (lambda (x) (elem? x l2)) l1)))
 (define (== l1 l2) (and (in? l1 l2) (in? l2 l1)))
 
+; Not null (stupid syntax for filter)
+(define (notnull? l) (not (null? l)))
+
 ; test if symbol is variable
 (define (variable? s) (char-upper-case? (first (string->list (symbol->string s)))))
 
@@ -297,7 +300,7 @@
        (ops (opFullInstance (opFindResult (orPred n) opList) goal worldObjects))
        (l (length ops))
        )
-    (map (lambda (o) (makeOPR o goal init opList l)) ops)
+    (filter notnull? (map (lambda (o) (makeOPR o goal init opList l)) ops))
     )
   )
 
