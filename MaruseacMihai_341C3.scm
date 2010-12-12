@@ -16,6 +16,7 @@
 ; some auxiliary functions, used below
 (define (nub-aux l seen) (if (null? l) seen (if (elem? (car l) seen) (nub-aux (cdr l) seen) (nub-aux (cdr l) (cons (car l) seen)))))
 (define (stringCompare s1 s2) (string<? s1 s2))
+(define (listCompare l1 l2) (if (null? l1) #t (if (= (car l1) (car l2)) (listCompare (cdr l1) (cdr l2)) (< (car l1) (car l2)))))
 
 ; and and or with list arguments
 (define (andList l) (foldl (lambda (x y) (and x y)) #t l))
@@ -155,8 +156,9 @@
                  (relevantBindings (map (lambda (R) (unify (predArgs R) (predArgs firstUnInstPred))) instancesInGoal))
                  (results (map (lambda (b) (opInstance op b)) relevantBindings))
                  )
-              (map (lambda (o) (opFullInstancesGoal o goal)) results)
-              )))
+              (if (null? instancesInGoal) (list op)
+                  (map (lambda (o) (opFullInstancesGoal o goal)) results)
+                  ))))
       )
   )
 
@@ -283,6 +285,9 @@
        (ornode (cons desEmpty (list n)))
        (expansion (orExpand ornode opList goal init world))
        )
+    ; 42-2
+    (display ornode)(newline)
+    (display expansion)(newline)
     expansion
     )
   )
@@ -378,8 +383,25 @@
 ; construct empty slot
 (define desEmpty (list UN UN UN UN UN))
 
-; get heuristic value
+; get heuristic value / compare
 (define (desEval d) OO)
+(define (desSort d1 d2)
+  (let*
+      (
+       (dO1 (desOp d1))
+       (dK1 (desKill d1))
+       (dG1 (desGen d1))
+       (dC1 (desCz d1))
+       (dI1 (desIFc d1))
+       (dO2 (desOp d2))
+       (dK2 (desKill d2))
+       (dG2 (desGen d2))
+       (dC2 (desCz d2))
+       (dI2 (desIFc d2))
+       )
+    (listCompare (list dO1 dC1 dI2) (list dO2 dC2 dI1))
+    )
+  )
 
 ; printing
 (define (desPrint d)
@@ -398,12 +420,44 @@
 ; main func - call the defined funcs
 ; TODO
 (define solve
-  (lambda (operatori init scopuri)
-    '()
+  (lambda (opList init scope)
+    (solveGoal scope opList init (worldObjects init scope))
     )
   )
 
-(define (expandGoal g) (andExpand g))
+(define (solveGoal g opList given world)
+  (let*
+      (
+       (exp (andExpand g opList given world))
+       (sortedExp (sort exp altSort))
+       (result (tryExpansion sortedExp opList given world))
+       )
+    ;(map oprPrint sortedExp)
+    ;sortedExp
+    result
+    )
+  )
+
+(define (tryExpansion alternatives opList given world)
+  (let*
+      (
+       (best (car alternatives))
+       (op (oprOp best))
+       (preCond (opPred op))
+       (stillToProve (-- preCond given))
+       )
+    ; 42-1
+    (display opList)(newline)
+    (display (andExpand stillToProve opList given world))(newline)
+    (display "---")(newline)
+    (map oprPrint (andExpand stillToProve opList given world))
+    (display stillToProve)(newline)
+    (opPrint op)
+    best
+    )
+  )
+
+(define (altSort a1 a2) (desSort (oprDes a1) (oprDes a2)))
 
 ; get world objects
 (define (worldObjects init scopes) (apply +++ (+++ (map predArgs init) (map predArgs scopes))))
@@ -420,6 +474,8 @@
                                (clear d1) (clear p2) (clear p3)
                                (on d1 d2) (on d2 p1)))
 (define HanoiGoal '((clear p1) (clear d1) (on d1 d2) (on d2 p2) (clear p3)))
+
+(define HanoiWorld (worldObjects HanoiState HanoiGoal))
 
 ; tests for second day of work
 (display "Test op instantiation1 ")
