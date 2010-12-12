@@ -275,7 +275,17 @@
 ; Each AND node is a list of predicates
 
 ; expanding: create OR nodes with empty desirability slot
-(define (andExpand n) (map (lambda (x) (cons desEmpty (list x))) n))
+(define (andExpand n opList init world) (apply +++ (map (lambda(x) (andExpandOPR x opList n init world)) n)))
+
+(define (andExpandOPR n opList goal init world)
+  (let*
+      (
+       (ornode (cons desEmpty (list n)))
+       (expansion (orExpand ornode opList goal init world))
+       )
+    expansion
+    )
+  )
 
 ; printing
 (define (andPrint n)
