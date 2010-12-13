@@ -188,7 +188,7 @@
 (define (opFullWorld world l) (filter opValid? (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l))))
 
 ; the following function should return quickly in a normal implementation
-(define (opFullInstancesWorld op world) (display op)(if (opInstantiated? op) (list op) (map (lambda (b) (opInstance op b)) (getAllBindings (opVars op) world))))
+(define (opFullInstancesWorld op world) (if (opInstantiated? op) (list op) (map (lambda (b) (opInstance op b)) (getAllBindings (opVars op) world))))
 (define (getAllBindings args world) (let ((lists (map (lambda (v) (if (variable? v) (map (lambda (x) (cons v x)) world) (list (cons v v)))) args))) (** lists)))
 
 ; printing
