@@ -458,7 +458,7 @@
               (display state)
               (display "\nSOLUTION:")
               (if tryAgain?
-                  (append oplist (solveTF opList state scope #f))
+                  (append oplist (solveTF opList state (-- scope state) #f))
                   oplist
                   )
               )
@@ -546,7 +546,10 @@
                  )
               ;          (display sortedExp)(newline)
               (if (null? nextLevel)
-                  (list #f '() '())
+                  (if (null? (cdr alternatives))
+                      (list #f '() '())
+                      (tryExpansion (cdr alternatives) opList g given world)
+                      )
                   (let*
                       (
                        )
