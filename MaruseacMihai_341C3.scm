@@ -110,6 +110,19 @@
     )
   )
 
+(define (opValid? op)
+  (let*
+      (
+       (needSet (opPred op))
+       (addSet (opAdd op))
+       (delSet (opDel op))
+       (disjunctAddDel? (null? (^ addSet delSet)))
+       (unknownDel? (null? (-- delSet needSet)))
+       )
+    (and disjunctAddDel? unknownDel?)
+    )
+  )
+
 ; applications
 (define (opApply op state) (predList+ (predList- state (opDel op)) (opAdd op)))
 (define (opApplicable? op state) (and (opInstantiated? op) (in? (opPred op) state)))
@@ -172,7 +185,7 @@
       )
   )
 
-(define (opFullWorld world l) (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l)))
+(define (opFullWorld world l) (filter opValid? (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l))))
 
 ; the following function should return quickly in a normal implementation
 (define (opFullInstancesWorld op world) (if (opInstantiated? op) (list op) (map (lambda (b) (opInstance op b)) (getAllBindings (opVars op) world))))
@@ -295,9 +308,6 @@
        (ornode (cons desEmpty (list n)))
        (expansion (orExpand ornode opList goal init world))
        )
-    ; 42-2
-    (display ornode)(newline)
-    (display expansion)(newline)
     expansion
     )
   )
@@ -427,42 +437,116 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; main func - call the defined funcs
-; TODO
-(define solve
-  (lambda (opList init scope)
-    (solveGoal scope opList init (worldObjects init scope))
+(define (solve opList init scope)
+  (let*
+      (
+       (return (solveGoal scope opList init (worldObjects init scope)))
+       (oplist (car return))
+       (state (cadr return))
+       )
+    (display "MAIN:\n")(display scope)(newline)
+    (display oplist)(newline)
+    (display state)
+    (display "\nSOLUTION:")
+    oplist
     )
   )
 
+; return list of operators needed to solve a goal paired with the new state
 (define (solveGoal g opList given world)
+  (newline)(newline)
+  (display "solveGoal called with ")(newline)
+  (display "g:")(display g)(newline)
+  (display "given:")(display given)(newline)
+  (newline)(newline)
   (let*
       (
        (exp (andExpand g opList given world))
        (sortedExp (sort exp altSort))
-       (result (tryExpansion sortedExp opList given world))
+       (result (tryExpansion sortedExp opList g given world))
+       (expansionSuccessful? (car result))
        )
     ;(map oprPrint sortedExp)
     ;sortedExp
-    result
+    (display ">>>>>>>>>>>>>\n")(display result)(display "<<<<<<<<<<\n")
+    (if expansionSuccessful?
+        ; if we have a result, check if we have more subgoals
+        (let*
+            (
+             (returnedData (cdr result))
+             (oplist (car returnedData))
+             (newState (cadr returnedData))
+             (stillToSolve (-- g newState))
+             )
+          (display "sTS")(display stillToSolve)(newline)
+          (if (null? stillToSolve)
+              ; if completely solved, return result
+              (cdr result)
+              ; else, search again, new goal, other state
+              (let*
+                  (
+                   (nextResult (solveGoal stillToSolve opList newState world))
+                   (ret_oplist (car nextResult))
+                   (ret_newState (cadr nextResult))
+                   (now_op (car returnedData))
+                   )
+                (display"\n.......................\n")
+                (display nextResult)(newline)
+                (display ret_oplist)(newline)
+                (display ret_newState)(newline)
+                (display now_op)(newline)
+                (display"\n.......................\n")
+                (list (++ now_op ret_oplist) ret_newState)
+                )
+              )
+          )
+        ; return empty list if failed to solve
+        '()
+        )
     )
   )
 
-(define (tryExpansion alternatives opList given world)
+; return list (#t/#f oplist new_state)
+(define (tryExpansion alternatives opList g given world)
+  (newline)(newline)
+  (display "tryExpansion called with ")(newline)
+  (display "alternatives:")(display alternatives)(newline)
+  (display "given:")(display given)(newline)
+  (newline)(newline)
   (let*
       (
        (best (car alternatives))
        (op (oprOp best))
        (preCond (opPred op))
-       (stillToProve (-- preCond given))
+       (Add (opAdd op))
+       (stillToProve (+++ (-- (-- g Add) given) (-- preCond given)))
        )
-    ; 42-1
-    (display opList)(newline)
-    (display (andExpand stillToProve opList given world))(newline)
-    (display "---")(newline)
-    (map oprPrint (andExpand stillToProve opList given world))
-    (display stillToProve)(newline)
-    (opPrint op)
-    best
+    (display stillToProve)(display "<---- stillToProve\n")
+    (opPrint op)(display"^---------op\n")
+    (if (null? stillToProve)
+        ; if successful, return (#t (list op) newstate)
+        (list #t (list (car op)) (opApply op given))
+        ; if unknown, try to expand one more level
+        (let*
+            (
+             (nextLevel (solveGoal stillToProve opList given world))
+             )
+          ;          (display sortedExp)(newline)
+          (display "STUPID")
+          (if (null? nextLevel)
+              (list #f '() '()) ;TODO treat
+              (let*
+                  (
+                   )
+                (display"\n@@@@@@@@@@@@@@@@@@@\n")
+                (display op)(newline)
+                (display (list #t (++ (car nextLevel) (list (car op))) (opApply op (cadr nextLevel))))
+                (display"\n@@@@@@@@@@@@@@@@@@@\n")
+                (list #t (++ (car nextLevel) (list (car op))) (opApply op (cadr nextLevel)))
+                )
+              )
+          )
+        )
     )
   )
 
@@ -483,6 +567,7 @@
                                (clear d1) (clear p2) (clear p3)
                                (on d1 d2) (on d2 p1)))
 (define HanoiGoal '((clear p1) (clear d1) (on d1 d2) (on d2 p2) (clear p3)))
+(define HanoiGoal1 '((clear d2) (on d1 p3) (on d2 p2)))
 
 (define HanoiWorld (worldObjects HanoiState HanoiGoal))
 
