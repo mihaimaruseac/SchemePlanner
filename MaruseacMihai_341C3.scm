@@ -166,20 +166,11 @@
 (define (opFullGoal goal l) (apply +++ (map (lambda (x) (opFullInstancesGoal x goal)) l)))
 
 (define (opFullInstancesGoal op goal)
-;    (display "\nMMMMM\n")
-;  (opPrint op)
-;    (display (opInstantiated? op))
-;    (newline)
-;    (display "\nMMMMM\n")
   (if (opInstantiated? op) (list op)
       (let
           (
            (firstUnInstPred (head (filter (lambda (p) (not (predInstantiated? p))) (opAdd op))))
            )
-;    (display "\nMMMMM\n")
-;    (display "X")
-;    (newline)
-;    (display "\nMMMMM\n")
         (if (null? firstUnInstPred) (list op)
             (let*
                 (
@@ -189,7 +180,7 @@
                  (results (map (lambda (b) (opInstance op b)) relevantBindings))
                  )
               (if (null? instancesInGoal) (list op)
-                  (map (lambda (o) (opFullInstancesGoal o goal)) results)
+                  (apply ++ (map (lambda (o) (opFullInstancesGoal o goal)) results))
                   ))))
       )
   )
@@ -197,7 +188,7 @@
 (define (opFullWorld world l) (filter opValid? (apply +++ (map (lambda (x) (opFullInstancesWorld x world)) l))))
 
 ; the following function should return quickly in a normal implementation
-(define (opFullInstancesWorld op world) (if (opInstantiated? op) (list op) (map (lambda (b) (opInstance op b)) (getAllBindings (opVars op) world))))
+(define (opFullInstancesWorld op world) (display op)(if (opInstantiated? op) (list op) (map (lambda (b) (opInstance op b)) (getAllBindings (opVars op) world))))
 (define (getAllBindings args world) (let ((lists (map (lambda (v) (if (variable? v) (map (lambda (x) (cons v x)) world) (list (cons v v)))) args))) (** lists)))
 
 ; printing
@@ -674,13 +665,13 @@
 
 (display ">>>> tests for opFullGoal:")
 (display "\nHanoi partial: ")(display (== (opFullGoal '((clear d1)) (opFindResult '(clear d1) HanoiOps)) '(((move A d1 C) ((disc A) (clear A) (on A d1) (smaller A C) (clear C)) ((on A d1) (clear C)) ((on A C) (clear d1))))))
-(display "\nHanoi total: ")(display (== (opFullGoal '((on d1 p3) (clear d1)) (opFindResult '(clear d1) HanoiOps)) '((((move d1 d1 p3) ((disc d1) (clear d1) (on d1 d1) (smaller d1 p3) (clear p3)) ((on d1 d1) (clear p3)) ((on d1 p3) (clear d1)))))))
+(display "\nHanoi total: ")(display (== (opFullGoal '((on d1 p3) (clear d1)) (opFindResult '(clear d1) HanoiOps)) '(((move d1 d1 p3) ((disc d1) (clear d1) (on d1 d1) (smaller d1 p3) (clear p3)) ((on d1 d1) (clear p3)) ((on d1 p3) (clear d1))))))
 (display "\nBW partial: ")(display (== (opFullGoal '((clear a)) (opFindResult '(clear a) BWOps)) '(((putdown a) ((hold a)) ((hold a)) ((ontable a) (clear a) (armempty)))
  ((unstack X a) ((on X a) (clear X) (armempty)) ((on X a) (clear X) (armempty)) ((hold X) (clear a)))
  ((stack a Y) ((hold a) (clear Y)) ((hold a) (clear Y)) ((on a Y) (clear a) (armempty))))))
 (display "\nBW total: ")(display (== (opFullGoal '((clear a) (on a b)) (opFindResult '(clear a) BWOps)) '(((putdown a) ((hold a)) ((hold a)) ((ontable a) (clear a) (armempty)))
  ((unstack X a) ((on X a) (clear X) (armempty)) ((on X a) (clear X) (armempty)) ((hold X) (clear a)))
- (((stack a b) ((hold a) (clear b)) ((hold a) (clear b)) ((on a b) (clear a) (armempty)))))))
+ ((stack a b) ((hold a) (clear b)) ((hold a) (clear b)) ((on a b) (clear a) (armempty))))))
 (newline)
 
 (display ">>>> tests for opFullWorld:")
