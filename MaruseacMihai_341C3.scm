@@ -585,7 +585,6 @@
                 (
                  (nextLevel (solveGoal stillToProve opList given world))
                  )
-              ;          (display sortedExp)(newline)
               (if (null? nextLevel)
                   (if (null? (cdr alternatives))
                       (list #f '() '())
@@ -613,18 +612,24 @@
   )
 
 ; returns (opListForMeet newState)
-(define (meetBetween goal start current opList)
-  (let*
-      (
-       (stillToRemove (-- current goal))
-       (needToAchieve (-- goal current))
-       (ops (opFindDelAdd stillToRemove needToAchieve opList))
-       )
-    (display "sTR: ")(display stillToRemove)(newline)
-    (display "nTA: ")(display needToAchieve)(newline)
-    (map opPrint ops)
-    (list '() '())
-    )
+(define (meetBetween goal current opList world)
+  (if (null? (-- goal current)) (list '() current)
+      (let*
+          (
+           (stillToRemove (-- current goal))
+           (needToAchieve (-- goal current))
+           (ops (opFindDelAdd stillToRemove needToAchieve opList))
+           (fulls (opFullWorld world ops))
+           (oks (filter (lambda (o) (opApplicable? o current)) fulls))
+           (values (map (lambda (o) (cons (length (^ goal (opDel o))) (list o))) oks))
+           (svalues (sort values (lambda (v1 v2) (< (car v1) (car v2)))))
+           (bestOp (cadr (car svalues)))
+           (result (opApply bestOp current))
+           (nextLevel (meetBetween goal result opList world))
+           )
+        (list (cons bestOp (car nextLevel)) (cadr nextLevel))
+        )
+      )
   )
 
 (define (altSort a1 a2) (desSort (oprDes a1) (oprDes a2)))
