@@ -484,7 +484,7 @@
       '() ; no plan if all is given
       (let
           (
-           (return (solveGoal scope opList init (worldObjects init scope)))
+           (return (solveGoal scope scope opList init (worldObjects init scope)))
            )
         (if (null? return)
             '() ; no plan if goal impossible to achieve
@@ -508,7 +508,7 @@
   )
 
 ; return list of operators needed to solve a goal paired with the new state
-(define (solveGoal g opList given world)
+(define (solveGoal gg g opList given world)
   (newline)(newline)
   (display "solveGoal called with ")(newline)
   (display "g:")(display g)(newline)
@@ -519,7 +519,7 @@
        (ng (-- g given))
        (exp (andExpand ng opList given world))
        (sortedExp (sort exp altSort))
-       (result (tryExpansion sortedExp opList ng given world))
+       (result (tryExpansion sortedExp opList gg ng given world))
        (expansionSuccessful? (car result))
        )
     (display ">>>>>>>>>>>>>\n")(display result)(display "<<<<<<<<<<\n")
@@ -530,7 +530,7 @@
              (returnedData (cdr result))
              (oplist (car returnedData))
              (newState (cadr returnedData))
-             (stillToSolve (-- g newState))
+             (stillToSolve (-- ng newState))
              )
           (display "sTS")(display stillToSolve)(newline)
           (if (null? stillToSolve)
@@ -539,7 +539,7 @@
               ; else, search again, new goal, other state
               (let*
                   (
-                   (nextResult (solveGoal stillToSolve opList newState world))
+                   (nextResult (solveGoal gg stillToSolve opList newState world))
                    (ret_oplist (car nextResult))
                    (ret_newState (cadr nextResult))
                    (now_op (car returnedData))
@@ -560,7 +560,7 @@
   )
 
 ; return list (#t/#f oplist new_state)
-(define (tryExpansion alternatives opList g given world)
+(define (tryExpansion alternatives opList gg g given world)
   (newline)(newline)
   (display "tryExpansion called with ")(newline)
   (display "alternatives:")(display alternatives)(newline)
@@ -583,12 +583,12 @@
             ; if unknown, try to expand one more level
             (let
                 (
-                 (nextLevel (solveGoal stillToProve opList given world))
+                 (nextLevel (solveGoal gg stillToProve opList given world))
                  )
               (if (null? nextLevel)
                   (if (null? (cdr alternatives))
                       (list #f '() '())
-                      (tryExpansion (cdr alternatives) opList g given world)
+                      (tryExpansion (cdr alternatives) opList gg g given world)
                       )
                   (let
                       (
@@ -603,7 +603,7 @@
                         (list #t (++ (car nextLevel) (list (car op))) (opApply op (cadr nextLevel)))
                         (let*
                             (
-                             (meetup (meetBetween (opPred op) (cadr nextLevel) opList world))
+                             (meetup (meetBetween gg (opPred op) (cadr nextLevel) opList world))
                              (state (cadr meetup))
                              (meetOps (map car (car meetup)))
                              )
@@ -622,7 +622,7 @@
   )
 
 ; returns (opListForMeet newState)
-(define (meetBetween goal current opList world)
+(define (meetBetween gg goal current opList world)
   (if (null? (-- goal current)) (list '() current)
       (let*
           (
@@ -632,13 +632,28 @@
            (fulls (opFullWorld world ops))
            (oks (filter (lambda (o) (opApplicable? o current)) fulls))
            (values (map (lambda (o) (cons (length (^ goal (opDel o))) (list o))) oks))
-           (svalues (sort values (lambda (v1 v2) (< (car v1) (car v2)))))
+           (svalues (reorder (sort values (lambda (v1 v2) (< (car v1) (car v2)))) gg))
            (bestOp (cadr (car svalues)))
            (result (opApply bestOp current))
-           (nextLevel (meetBetween goal result opList world))
+           (nextLevel (meetBetween gg goal result opList world))
            )
+        (display "MMM")(display svalues)(display "MMM")(newline)
         (list (cons bestOp (car nextLevel)) (cadr nextLevel))
         )
+      )
+  )
+
+(define (reorder l goal)
+  (if (= 0 (caar l))
+      (let*
+          (
+           (zeros (map cadr (filter (lambda (o) (= 0 (car o))) l)))
+           (values (map (lambda (o) (cons (length (^ goal (opAdd o))) (list o))) zeros))
+           (svalues (sort values (lambda (v1 v2) (> (car v1) (car v2)))))
+           )
+        svalues
+        )
+      l
       )
   )
 
