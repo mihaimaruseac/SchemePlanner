@@ -674,8 +674,12 @@
                  )))
 
 (define BWState '((ontable a) (on b a) (on c b) (clear c) (armempty)))
+(define BWState1 '((ontable a) (on c a) (ontable b) (clear c) (clear b) (armempty)))
+(define BWState2 '((ontable a1) (on a2 a1) (on a3 a2) (on a4 a3) (on a5 a4) (on a6 a5) (on a7 a6) (on a8 a7) (clear a8) (armempty)))
 
 (define BWGoal '((clear c) (ontable b) (on c b) (armempty)))
+(define BWGoal1 '((ontable c) (on b c) (on a b) (clear a) (armempty)))
+(define BWGoal2 '((ontable a8) (on a7 a8) (on a6 a7) (on a5 a6) (on a4 a5) (on a3 a4) (on a2 a3) (on a1 a2) (clear a1) (armempty)))
 
 (define BWWorld (worldObjects BWState BWGoal))
 
