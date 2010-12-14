@@ -601,7 +601,17 @@
                     (display"\n@@@@@@@@@@@@@@@@@@@\n")
                     (if okToChain?
                         (list #t (++ (car nextLevel) (list (car op))) (opApply op (cadr nextLevel)))
-                        (list #f '() '())
+                        (let*
+                            (
+                             (meetup (meetBetween (opPred op) (cadr nextLevel) opList world))
+                             (state (cadr meetup))
+                             (meetOps (map car (car meetup)))
+                             )
+                          (display "><")(display meetup)(newline)
+                          (display "S")(display state)(newline)
+                          (display "O")(display meetOps)(newline)
+                          (list #t (++ (car nextLevel) meetOps (list (car op))) (opApply op state))
+                          )
                         )
                     )
                   )
